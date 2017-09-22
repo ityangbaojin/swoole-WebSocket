@@ -53,14 +53,14 @@
                         contentsMessage.append(html);
                     }
                     // 滚动条显示最低端
-                    // console.log($('.contents-message').height());
                     $('.message').scrollTop($('.contents-message').height());
+                    // console.log($('.contents-message').height());
                     // console.log('从服务器获取的数据' + evt.data);
                 }
                 // 监听连接关闭
                 webSocket.onclose = function (evt) {
                     console.log('服务器拒绝');
-                    // sessionStorage.removeItem();
+                    sessionStorage.removeItem('name');
                 }
                 // 监听连接错误信息
                 webSocket.onerror = function (evt) {
