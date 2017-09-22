@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>webSocket</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style type="text/css">
+        body {background-color: #ccc;}
+        .pt10 {padding-top: 10px;}
+        .message {height: 600px; border: 1px solid #ccc; border-radius: 5px; background-color: #fff; overflow:auto;}
+        .padding-left-right {padding-left: 0px; padding-right: 0px;}
+        .height {height: 50px;}
+        .pleft-10 {padding-left: 10px;}
+        .send-message {display: none;}
+        .m10 {margin: 10px;}
+        .new-join {text-align: center; background-color: #000; color: #fff; padding: 10px 0; opacity: 0.5;position:fixed; top:0; left: 0; margin-bottom: 30px; z-index: 9999;}
+        .self {background-color: #8FBC8F; float: right; text-align: right;}
+        .contents-message {height: auto; overflow: hidden;}
+    </style>
+    <script type="text/javascript">
+        $(function() {
+            // 打开设置昵称框
+            $('#nickname').modal({
+                keyboard: false,
+                backdrop: 'static'
+            });
+            if (window.WebSocket) {
+                var contentsMessage = $('.contents-message');
+                // webSocket建立连接
+                var webSocket = new WebSocket('ws://192.168.31.183:9502');
+                webSocket.onopen = function (evt) {}
+                // 监听服务器数据推送
+                webSocket.onmessage = function (evt) {
+                    var name = sessionStorage.getItem('name');
+                    // console.log(evt.data.indexOf(name));
+                    if (evt.data.indexOf('热烈欢迎') >= 0) {
+                        // 进入聊天室
+                        $('.new-join').html(evt.data).show();
+                        // 3秒关闭进入聊天室
+                        setTimeout(function() {
+                            $('.new-join').hide();
+                        }, 3000);
+                    } else if (evt.data.indexOf(name) >= 0) {
+                        // 自己发的
+                        var html = '<div class="col-md-6 m10 self">' + evt.data + '</div>';
+                        contentsMessage.append(html);
+                    } else {
+                        // 别人发的
+                        var html = '<div class="col-md-6 m10" style="background-color: #D3D3D3">' + evt.data + '</div>';
+                        contentsMessage.append(html);
+                    }
+                    // 滚动条显示最低端
+                    // console.log($('.contents-message').height());
+                    $('.message').scrollTop($('.contents-message').height());
+                    // console.log('从服务器获取的数据' + evt.data);
+                }
+                // 监听连接关闭
+                webSocket.onclose = function (evt) {
+                    console.log('服务器拒绝');
+                    // sessionStorage.removeItem();
+                }
+                // 监听连接错误信息
+                webSocket.onerror = function (evt) {
+                    console.log('错误：' + evt.data);
+                }
+
+                // 设置昵称
+                $('.set-nickname').click(function() {
+                    var nickName = $.trim($('input[name="nickName"]').val());
+                    if (nickName == '') {
+                        return false;
+                    }
+                    webSocket.send('#name#' + nickName);
+                    sessionStorage.setItem('name', nickName);
+                    $('#nickname').modal('toggle');
+                    $('.send-message').show();
+                    $('title').html('IM ' + nickName);
+                    alert('设置成功');
+                });
+
+                // 发送信息
+                $('.send').click(function() {
+                    var content = $.trim($('input[name="content"]').val());
+                    if (content == '') {
+                        return false;
+                    }
+                    $('input[name="content"]').val('');
+                    // 向服务器发送数据
+                    webSocket.send(content);
+                });
+
+                // 回车
+                $('input[name="content"]').keydown(function(event) {
+                    var e = event || window.event;    
+                    // enter 键
+                    if (e && e.keyCode == 13) { 
+                        var content = $.trim($('input[name="content"]').val());
+                        if (content == '') {
+                            return false;
+                        }
+                        $('input[name="content"]').val('');
+                        // 向服务器发送数据
+                        webSocket.send(content);       
+                    }
+                });
+            } else {
+                console.log("您的浏览器不支持WebSocket");
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container pt10">
+        <div class="col-md-12 send-message">
+            <div class="message">
+                <div class="contents-message">
+                    <div class="col-md-12 new-join"></div>
+                </div>
+            </div>
+            <div class="show-send pt10">
+                <div class="col-md-6 padding-left-right">
+                    <input type="text" class="form-control height" name="content" placeholder="请输入想说的话，可以使用enter键">
+                </div>
+                <div class="col-md-6 padding-left-right pleft-10">
+                    <button class="btn btn-primary height send" type="submit">发送</button>
+                </div>
+            </div>
+        </div>
+        <!--设置昵称 start-->
+        <div class="modal fade" tabindex="-1" role="dialog" id="nickname">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="col-md-10">
+                            <input type="text" class="form-control" name="nickName" placeholder="请设置昵称"> 
+                        </div>
+                        <button class="btn btn-primary set-nickname">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--设置昵称 end-->
+    </div>
+</body>
+</html>
